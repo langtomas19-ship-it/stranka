@@ -126,9 +126,7 @@
     left: 50%;
     top: 50%;
     transform: translate(calc(-50% - 58px), -50%);
-    transition: transform 0.35s cubic-bezier(.22,1,.36,1),
-            box-shadow 0.18s,
-            padding 0.3s;
+    transition: transform 0.18s, box-shadow 0.18s, padding 0.3s;
     white-space: nowrap;
     z-index: 2;
   }
@@ -136,10 +134,6 @@
   #btnYes.expanded {
     padding: 0.75rem 3rem;
   }
-
- #btnYes.centered {
-  transform: translate(-50%, -50%);
-}
 
   #btnYes:hover {
     box-shadow: 0 8px 24px rgba(233,30,99,0.38);
@@ -164,7 +158,7 @@
     top: 50%;
     transform: translate(16px, -50%);
     transition: left 0.13s cubic-bezier(.22,1,.36,1), top 0.13s cubic-bezier(.22,1,.36,1);
-    z-index: 3;
+    z-index: 1;
   }
 
   /* -- SLIDE PANELS -- */
@@ -309,7 +303,7 @@
         <div class="step-dot"></div>
       </div>
       <p class="panel-title">Kedy sa stretneme? 🗓</p>
-      <p class="panel-sub">Vyber dátum a čas, tešíme sa!</p>
+      <p class="panel-sub">Vyber dátum a čas.</p>
 
       <label class="form-label" for="dateInput">Dátum</label>
       <input type="date" class="form-control" id="dateInput">
@@ -328,14 +322,14 @@
     <div id="panel3" class="slide-panel processing-panel">
       <span class="processing-icon">⏳</span>
       <p class="processing-text">Tvoja požiadavka sa spracováva&hellip;</p>
-      <p class="processing-sub">posielame tvoj dátum s láskou 💌</p>
+      <p class="processing-sub">Odosielam 💌</p>
     </div>
 
     <!-- PANEL 4: Confirmed -->
     <div id="panel4" class="slide-panel">
-      <span style="font-size:2.5rem;display:block;margin-bottom:1rem;animation:heartbeat 2s ease-in-out infinite">💖</span>
+      <span style="font-size:2.5rem;display:block;margin-bottom:1rem;animation:heartbeat 2s ease-in-out infinite">😍</span>
       <p class="panel-title">Dohodnuté!</p>
-      <p class="panel-sub" id="confirmedText">Tešíme sa na seba 🌸</p>
+      <p class="panel-sub" id="confirmedText">Teším sa na teba 🌸</p>
     </div>
 
   </div>
@@ -354,9 +348,9 @@
       Set "To email" to YOUR email address in the template settings
    4. Copy your Public Key from Account → API Keys
    ==================================================== */
-const EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';
-const EMAILJS_SERVICE_ID  = 'YOUR_SERVICE_ID';
-const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';
+const EMAILJS_PUBLIC_KEY  = '_Lq0ruSSU-NzdMRWV';
+const EMAILJS_SERVICE_ID  = 'service_yfug17q';
+const EMAILJS_TEMPLATE_ID = 'template_bq7pyim';
 
 emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
 
@@ -380,7 +374,6 @@ const btnYes     = document.getElementById('btnYes');
 const area       = document.getElementById('buttonsArea');
 
 let dodgeEnabled = false;
-let firstDodge = true;
 
 // After first mousemove anywhere on the area, enable dodging and expand Yes
 area.addEventListener('mousemove', () => {
@@ -396,55 +389,37 @@ btnNo.addEventListener('mousemove', dodge);
 function dodge() {
   if (!dodgeEnabled) return;
 
-  if (firstDodge) {
-    firstDodge = false;
-    btnYes.classList.add('centered');
-  }
-
   const areaRect = area.getBoundingClientRect();
   const noRect   = btnNo.getBoundingClientRect();
-  const yesRect  = btnYes.getBoundingClientRect();
+
+  const areaW = areaRect.width;
+  const areaH = areaRect.height;
+
+  // Current center of No inside area
+  const curCx = noRect.left + noRect.width  / 2 - areaRect.left;
+  const curCy = noRect.top  + noRect.height / 2 - areaRect.top;
 
   const margin = 10;
-  const halfW  = noRect.width / 2 + margin;
+  const halfW  = noRect.width  / 2 + margin;
   const halfH  = noRect.height / 2 + margin;
 
   const safeL = halfW;
-  const safeR = areaRect.width - halfW;
+  const safeR = areaW - halfW;
   const safeT = halfH;
-  const safeB = areaRect.height - halfH;
+  const safeB = areaH - halfH;
 
-  if (safeR <= safeL || safeB <= safeT) return;
+  if (safeR <= safeL || safeB <= safeT) return; // area too small — bail
 
-  let newCx, newCy;
-  let tries = 0;
-
+  let newCx, newCy, tries = 0;
   do {
     newCx = safeL + Math.random() * (safeR - safeL);
     newCy = safeT + Math.random() * (safeB - safeT);
-
-    const candidate = {
-      left: areaRect.left + newCx - noRect.width / 2,
-      right: areaRect.left + newCx + noRect.width / 2,
-      top: areaRect.top + newCy - noRect.height / 2,
-      bottom: areaRect.top + newCy + noRect.height / 2
-    };
-
-    const buffer = 20;
-
-    var overlapsYes =
-      candidate.left < yesRect.right + buffer &&
-      candidate.right > yesRect.left - buffer &&
-      candidate.top < yesRect.bottom + buffer &&
-      candidate.bottom > yesRect.top - buffer;
-
     tries++;
-  } while (overlapsYes && tries < 50);
-
-  btnNo.style.left = newCx + 'px';
-  btnNo.style.top = newCy + 'px';
-  btnNo.style.transform = 'translate(-50%, -50%)';
-}
+  } while (
+    tries < 12 &&
+    Math.abs(newCx - curCx) < noRect.width + 20 &&
+    Math.abs(newCy - curCy) < noRect.height + 16
+  );
 
   // Convert center → left/top (absolute inside area)
   btnNo.style.left      = newCx + 'px';
